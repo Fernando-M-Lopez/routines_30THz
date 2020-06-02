@@ -5,10 +5,15 @@ PRO  obtain_flat_30THz, indir=indir, telescope=telescope
     ;Este proceso obtiene una mascara de Flat para la camara 30THz utilizando el metodo de Kuhn, Lin & Loranz 1991
     ;Utiliza la rutina mk_kuhn_flat del solar soft
     ;Lee las imagenes de entrada en formato fpf (Flir Public Format) o fits del directorio dirimag.
-    ;Escibe la imagen de Flat en formato fits y jpg en directorio de salida,
-    ;con nombre la fecha de las imagenes
+    ;Escibe la imagen de Flat en formato fits y jpg en directorio de salida, con nombre la fecha de las imagenes
     ;Para aplicar la corrección de Flat hay que hacer Imagen=Imagen/Imagenflat
 
+    ;INPUT 
+    ;Define input directory where the N flat images are located
+    ; indir = 'path of images' (eg: indir = '\home\Fernando\flatimages\')
+    ; telescope='AR30T' or 'BR30T'
+    ;
+    ;
     ; History:
     ; written by Fernando M. Lopez (CRAAM-Mackenzie) --- October 2019
     ; The routine is based in the work done by Carlos Francile and Franco Manini (OAFA-UNSJ, San Juan, Argentina)
@@ -17,12 +22,7 @@ PRO  obtain_flat_30THz, indir=indir, telescope=telescope
 
     loadct,0
 
-    ;********************************************* INPUT *********************************************************************************
-    ;Define input directory where the N flat images are located
-    ; indir = 'path of images' (eg: indir = '\home\Fernando\flatimages\')
-  	; telescope='AR30T' or 'BR30T'
-		;*****************************************************************************************************************************************
-
+   
 		if not keyword_set(indir) then message, '*** MUST INDICATE AS INPUT KEYWORD THE PATH OF THE IMAGES, STOPPING PROCESS ***'
 		if not keyword_set(telescope) then message, '*** MUST INDICATE AS INPUT KEYWORD THE TELESCOPE, STOPPING PROCESS ***'
 		if telescope ne 'AR30T' then if telescope ne 'BR30T' then $
