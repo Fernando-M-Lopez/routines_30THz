@@ -23,6 +23,7 @@ pro transform_fpf_to_fits_30THz, telescope=telescope, indir=indir, level=level
 ; header= the header of the .fits image
 ;
 ; History: Written by Fernando M. Lopez (CRAAM-Mackenzie) --- October 2019
+; The routine is based in the work done by Carlos Francile and Franco Manini (OAFA-UNSJ, San Juan, Argentina)
 ;**************************************************************************************************************************************
 
 	; If not indicated must enter the path where the original images are located
