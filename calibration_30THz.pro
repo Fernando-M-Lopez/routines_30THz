@@ -26,7 +26,7 @@
 	; - index = a vector containing the indexes of the images to calibrate (-1 results in the calibration of all images) 
 	;
 	; Keywords: 
-	; flat_dir = 'path' = the path where the Flat Field image is located (not required if keyword /flat_on is not used)
+	; flatdir = 'path' = the path where the Flat Field image is located (not required if keyword /flat_on is not used)
 	; outdir='path'     = The path to save the calibrated images (if not indicated, it is created in same folder than the input images)
 	; /flat_on          = for applying the FLat field correction
 	; /center_on        = for align the center of the Sun with the center of the image 
@@ -44,7 +44,7 @@
 	; Output: 
 	; The resulting filename is indicated as: 
 	; "AR30T_YYYY-MM-DDTHH:MM:SS.SSS_levelxx.fits" ; "BR30T_YYYY-MM-DDTHH:MM:SS.SSS_levelxx.fits"  
-	; --- AR30T: for images obtained at El Leoncito and BR30T for images obtained at CRAAM-Sau Paulo
+	; --- AR30T: for images obtained at El Leoncito and BR30T for images obtained at CRAAM-Sao Paulo
 	;
 	; History:
 	; written by Fernando M. Lopez (CRAAM-Mackenzie) --- October 2019
@@ -155,7 +155,7 @@
 
 	window,4,xs=512,ys=512, title='Image centered'
 	window,1, xs=512,ys=512, title='Final Image'	
-	loadct,8
+	loadct,0
 
 	;*****************************************************************************************************************************
 	; start calibration process for all images 
@@ -218,7 +218,8 @@
 		endif
 	;*****************************************************************************************************************************
 	; save the images
-		wset, 1 & tv, bytscl (congrid(Imgout,512,512), min=max(Imgout)-stdev(Imgout)/4,max=max(Imgout))
+	;	wset, 1 & tvscl (congrid(Imgout,512,512), min=max(Imgout)-stdev(Imgout)/4,max=max(Imgout))
+	wset, 1 & tvscl, sqrt(congrid(Imgout,512,512))
 	;	sxaddpar,header, 'HISTORY', corrections_list
 		
 		filename = telescope+'_'+year+'-'+month+'-'+day+'T'+hour+':'+minute+':'+second+'_level'+level+'.fits'
@@ -346,20 +347,23 @@
 	Idummy = Idummy - min(Idummy)
 	Idummy = Idummy/max(Idummy)
 
-
 	Imgout = fltarr(dimxf,dimyf)+min(Imgin)
 
 	Imgout[((dimxf-dimx)/2.): dimxf-((dimxf-dimx)/2.)-1, ((dimyf-dimy)/2.):dimyf-((dimyf-dimy)/2.)-1] = Imgin
 	;if dimxf gt dimy then Imgout[((dimxf-dimx)/2.): dimxf-((dimxf-dimx)/2.)-1, ((dimyf-dimy)*.7):dimyf-((dimyf-dimy)*.3)-1] = Imgin
 
 
-	; define the limb as I/I0=0.5
-	intcenter = mean(Idummy[dimx/2.-20:dimx/2+20,dimy/2.-20:dimy/2.+20])
-	resultcenter=WHERE(Idummy lt intcenter/2., countador2, COMPLEMENT=notresultcenter)
+	; define the limb as I/Imax=0.5
+	re08 = where(smooth(Idummy,30,/edge) eq max(smooth(Idummy,30,/edge)))
+	xymax = array_indices(Idummy,re08)
+	
+	;intcenter = mean(Idummy[dimx/2.-20:dimx/2+20,dimy/2.-20:dimy/2.+20]) ; Esto usabamos antes: el centro de la imagen..
+	intcenter = 0.5*mean(Idummy[xymax[0],xymax[1]])
+	resultcenter=where(Idummy lt intcenter, countador2, COMPLEMENT=notresultcenter)
 		  if countador2 eq 0 then print, '----- FAILED TO FIND OUT THE CENTER ----'
 
 		  ;--------------------------------------------------------------------------------------------------------
-		  ;Generate in Icalcu and image where the limb is determined by the method of Roberts for edge detection 
+		  ;Generate in Icalcu an image where the limb is determined by the method of Roberts for edge detection 
 		  Icalcu=FLTARR(dimx,dimy)+1.
 		  Icalcu(resultcenter)=0.
 		  ;Icalcu(notresultcenter)=1.
@@ -370,7 +374,8 @@
 
 		  ;-------------------------------------------------------------------------------------------------
 		  ;interpolate a circle to the position of the Limb of Icalcu, using the package mpfit (L-Markwardt)
-		  start_parms=[367.,367.,Imgcenter[0]-1.,Imgcenter[1]-1,0.]
+		  ;start_parms=[367.,367.,Imgcenter[0]-1.,Imgcenter[1]-1,0.]
+			start_parms=[367.,367.,xymax[0],xymax[1],0.]
 		  parms = MPFITELLIPSE(FLOAT(REFORM(resultcentered3(0,*))), FLOAT(REFORM(resultcentered3(1,*))), start_parms,/CIRCULAR, QUIET=1)
 		  ;      P[0]   Ellipse semi axis 1
 		  ;      P[1]   Ellipse semi axis 2   ( = P[0] if CIRCLE keyword set)
@@ -380,9 +385,9 @@
 
 		  ;---------------------------------------------------------------------------------------------------
 		  ;check for validity of the value of the Sun's center obtained. 
-		  if parms(2) gt (dimx/2.)-0.5*(dimx/2.) and parms(2) lt (dimx/2.)+0.5*(dimx/2.) and $
-			parms(3) gt (dimy/2.)-0.5*(dimy/2.) and parms(3) lt (dimy/2.)+0.5*(dimy/2.) then begin
-			;if parms(2) gt 0 and parms(2) lt dimx and parms(3) gt 0 and parms(3) lt dimy then begin
+		 ; if parms(2) gt (dimx/2.)-0.5*(dimx/2.) and parms(2) lt (dimx/2.)+0.5*(dimx/2.) and $
+		;	parms(3) gt (dimy/2.)-0.5*(dimy/2.) and parms(3) lt (dimy/2.)+0.5*(dimy/2.) then begin
+			if parms(2) gt 0 and parms(2) lt dimx and parms(3) gt 0 and parms(3) lt dimy then begin
 					
 		      x0=parms(2)        ; pixel x of the solar center
 		      y0=parms(3)        ; pixel y of the solar center 
@@ -429,7 +434,7 @@
 
 	;Imgout = shift(Imgout,deltax_new,deltay_new)
 	Imgout = shift(Imgout,deltax,deltay)
-
+	
 	Img45=Imgout
 
 	;imagen3=shift(imagen3,640-(round(x)+320),480-(round(y)+240))
@@ -439,7 +444,7 @@
 
 	Img45[newx0-3:newx0+3,newy0-3:newy0+3]=0
    wset, 4 & tv, bytscl (congrid(Img45,512,512), min=max(Imgout)-stdev(Imgout)/4,max=max(Imgout))
-
+	;	wset, 4 & tvscl, sqrt(congrid(Img45,512,512))
 	; #######################################################################
 	; update the header with the new modifications to the image
 	
@@ -454,7 +459,6 @@
 		sxaddpar,header, 'HISTORY', 'Centered'
 		if r0 eq 1 then sxaddpar,header, 'HISTORY', 'NOT POSSIBLE TO DETERMINE LIMB POSITION IN THE IMAGE'
 	; #######################################################################
-
 
 	return
 	end

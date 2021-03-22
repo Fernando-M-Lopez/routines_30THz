@@ -23,7 +23,6 @@ pro transform_fpf_to_fits_30THz, telescope=telescope, indir=indir, level=level
 ; header= the header of the .fits image
 ;
 ; History: Written by Fernando M. Lopez (CRAAM-Mackenzie) --- October 2019
-; The routine is based in the work done by Carlos Francile and Franco Manini (OAFA-UNSJ, San Juan, Argentina)
 ;**************************************************************************************************************************************
 
 	; If not indicated must enter the path where the original images are located
@@ -48,12 +47,16 @@ pro transform_fpf_to_fits_30THz, telescope=telescope, indir=indir, level=level
 	total_indir=strlen(indir)
 	pos_bar=strpos(indir,'/',/reverse_search)
 	if strmid(indir,pos_bar,1) ne '/' then indir=indir+'/' 
-		
+	
+	pos_bar1 = strpos(indir,'/',/reverse_search)
+	indir2 = strmid(indir,0,pos_bar1-1)
+	pos_bar2 = strpos(indir2,'/',/reverse_search)
+	indir2 = strmid(indir,0,pos_bar2+1)
 	
 	; create the output folder
-	file_mkdir, indir + 'fits/'
+	file_mkdir, indir2 + 'level00/'
 
-	outdir = indir+'fits/'
+	outdir = indir2 + 'level00/'
 
 	; read the images
 	files = file_search(indir+'*.fpf',count=n)
@@ -69,7 +72,7 @@ pro transform_fpf_to_fits_30THz, telescope=telescope, indir=indir, level=level
 
 	if formato eq '.fpf' then begin
 
-		for i=0,n-1 do begin
+		for i=0l,n-1 do begin
 			
 			fpf = read_fpf(files[i]) 
 			image = fpf.data
@@ -88,12 +91,12 @@ pro transform_fpf_to_fits_30THz, telescope=telescope, indir=indir, level=level
 	; -----------------------------------------------------------------------------------------------------------------------------------
 			filename=sxpar(header,'FILENAME')
 			file = outdir+filename+'.fits'
-			print, 'Processing image ', i , ' from a total of: ', n , ' for telescope: ', telescope 	
+			print, 'Processing image', i+1 , ' from a total of:', n , ' for telescope: ', telescope 	
 			writefits, file, image, header
 
 		endfor
 	endif else message, '-------- Error:Input images are not .fpf --------' 
-	print, '-------------------------------- Process finishded --------------------------------'
+	print, '-------------------------------- Done -----------------------------------'
 	end
 
 ; ############################################################################################################################################
